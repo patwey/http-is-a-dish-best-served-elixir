@@ -5,12 +5,13 @@ defmodule Server do
                                      packet: :line,
                                      active: false,
                                      reuseaddr: true])
-    if {:ok, client} = :gen_tcp.accept(socket) do
-      IO.puts "Got your request!"
-      :gen_tcp.close(socket)
-    else
-      IO.puts "Listening on port: #{port}"
-      accept(port)
-    end
+    {:ok, client} = :gen_tcp.accept(socket)
+    loop_acceptor(socket)
+  end
+
+  def loop_acceptor(socket) do
+    {:ok, client} = :gen_tcp.accept(socket)
+    :gen_tcp.send(socket, "hello world")
+    loop_acceptor(socket)
   end
 end

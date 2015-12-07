@@ -5,13 +5,23 @@ defmodule Server do
                                      packet: :line,
                                      active: false,
                                      reuseaddr: true])
-    {:ok, client} = :gen_tcp.accept(socket)
-    loop_acceptor(socket)
+    accept_loop(socket)
   end
 
-  def loop_acceptor(socket) do
+  def accept_loop(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
-    :gen_tcp.send(socket, "hello world")
-    loop_acceptor(socket)
+
+    if {:ok, _} = :gen_tcp.recv(client, 0) do
+      serve(client)
+    end
+
+    accept_loop(socket)
+  end
+
+  def serve(client) do
+    response = 'HTTP/1.0 200 OK \r\n' ++
+               'Content-Length: 11\r\n\r\n' ++
+               'hello world'
+    :gen_tcp.send(client, response)
   end
 end

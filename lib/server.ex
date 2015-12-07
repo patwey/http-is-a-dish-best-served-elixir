@@ -24,4 +24,13 @@ defmodule Server do
                'hello world'
     :gen_tcp.send(client, response)
   end
+
+  def parse_request(request) do
+    # parse first line
+    [ first_line | headers ] = String.split(request, "\r\n")
+    [ verb | path_and_protocol ] = String.split(first_line, " ")
+    [ path | protocol ] = path_and_protocol
+    [ protocol_version | _ ] = protocol
+    [ verb: verb, path: path, protocol_version: protocol_version ]
+  end
 end

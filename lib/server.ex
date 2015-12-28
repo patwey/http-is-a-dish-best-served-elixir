@@ -25,7 +25,7 @@ defmodule Server do
 
   # Separate out the request lines and parse them into a map
   def parse_request(request) do
-    [request|body] = String.split(request, "\r\n\r\n")
+    [request|_body] = String.split(request, "\r\n\r\n")
     request_lines = String.split(request, "\r\n")
 
     request_lines
@@ -63,19 +63,40 @@ defmodule Server do
 
   # Use the requested path and a static root path to serve files
   @root_path Path.expand("~/code/server/files")
+
   def get_body(request) do
     file_path = Path.join(@root_path, request[:path])
-    case File.read file_path do
-      {:ok, body}      -> body
-      {:error, reason} -> "Something went wrong: #{reason}"
+    if permission?(file_path) do
+      case File.read file_path do
+        {:ok, body} -> [body, 200]
+        {:error, _} -> ["Page Not Found", 404]
+      end
+    else
+      ["Access Denied", 403]
     end
   end
 
+  # Deny permission to admin pages
+  def permission?(path), do: !String.match?(path, ~r/admin/)
+
   # Create a response string with a dynamic content-length
-  def respond_with(body) do
-    "HTTP/1.0 200 OK \r\n" <>
+  def respond_with([body, status_code]) do
+    _respond_with(body, status_code, status_text(status_code))
+  end
+
+  defp _respond_with(body, status_code, status_text) do
+    "HTTP/1.0 #{status_code} #{status_text}\r\n" <>
     "Content-Length: #{String.length(body)}\r\n\r\n" <>
     body
+  end
+
+  # Return the text for a given status code
+  def status_text(code) do
+    case code do
+      200 -> "OK"
+      404 -> "Not Found"
+      403 -> "Forbidden"
+    end
   end
 
   # Serve the client a response

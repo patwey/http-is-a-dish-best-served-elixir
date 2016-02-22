@@ -1,4 +1,4 @@
-Server
+HTTP Server
 ======
 
-An HTTP server!
+A simple web server built in Elixir.
